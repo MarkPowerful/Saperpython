@@ -1,0 +1,115 @@
+import random
+
+class Cell:
+    def __init__(self):
+        self.is_mine = False
+        self.is_revealed = False
+        self.is_flagged = False
+        self.neighboring_mines = 0
+
+    def reveal(self):
+        self.is_revealed = True
+
+    def flag(self):
+        self.is_flagged = not self.is_flagged
+
+class Game:
+    def __init__(self, width, height, mines):
+        self.width = width
+        self.height = height
+        self.mines = mines
+        self.field = [[Cell() for _ in range(width)] for _ in range(height)]
+        self.game_over = False
+        self.win = False
+
+    def start(self):
+        mine_positions = random.sample(range(self.width * self.height), self.mines)
+        for pos in mine_positions:
+            x, y = pos // self.width, pos % self.width
+            self.field[x][y].is_mine = True
+        for x in range(self.width):
+            for y in range(self.height):
+                if not self.field[x][y].is_mine:
+                    for dx in [-1, 0, 1]:
+                        for dy in [-1, 0, 1]:
+                            nx, ny = x + dx, y + dy
+                            if 0 <= nx < self.width and 0 <= ny < self.height and self.field[nx][ny].is_mine:
+                                self.field[x][y].neighboring_mines += 1
+
+    def reveal_cell(self, x, y):
+        if 1 <= x <= self.width and 1 <= y <= self.height:
+            x, y = x - 1, y - 1
+            if self.field[y][x].is_mine:
+                self.game_over = True
+                print("Вы проиграли! Вот поле со всеми открытыми клетками:")
+                self.reveal_all_cells()
+                self.display_field()
+            else:
+                self.field[y][x].reveal()
+                if self.field[y][x].neighboring_mines == 0:
+                    for dx in [-1, 0, 1]:
+                        for dy in [-1, 0, 1]:
+                            nx, ny = y + dy, x + dx
+                            if 0 <= nx < self.height and 0 <= ny < self.width and not self.field[nx][ny].is_revealed:
+                                self.reveal_cell(ny + 1, nx + 1)  # корректировка индексов
+            if self.check_win():
+                self.win = True
+                self.game_over = True
+                print("Игра окончена!")
+        else:
+            print("Неверные координаты. Пожалуйста, введите координаты в пределах игрового поля.")
+
+    def flag_cell(self, x, y):
+        if 1 <= x <= self.width and 1 <= y <= self.height:
+            x, y = x - 1, y - 1
+            self.field[y][x].flag()
+        else:
+            print("Неверные координаты. Пожалуйста, введите координаты в пределах игрового поля.")
+
+    def check_win(self):
+        for row in self.field:
+            for cell in row:
+                if not cell.is_mine and not cell.is_revealed:
+                    return False
+        return True
+
+    def display_field(self):
+        print(' ' + ' '.join(str(i+1) for i in range(self.width)))
+        for i, row in enumerate(self.field, start=1):
+            print(str(i), end=' ')
+            for cell in row:
+                if cell.is_revealed:
+                    if cell.is_mine:
+                        print('M', end=' ')
+                    else:
+                        print(cell.neighboring_mines, end=' ')
+                elif cell.is_flagged:
+                    print('F', end=' ')
+                else:
+                    print('X', end=' ')
+            print()
+
+    def reveal_all_cells(self):
+        for row in self.field:
+            for cell in row:
+                cell.reveal()
+
+    def process_input(self):
+        while not self.game_over:
+            self.display_field()
+            action = input('Введите действие (reveal/flag) и координаты (x y): ').split()
+            if len(action) < 3 or action[0] not in ['reveal', 'flag']:
+                print("Неверный ввод. Пожалуйста, введите действие (reveal/flag) и две координаты (например, 'reveal 3 4').")
+                continue
+            try:
+                x, y = map(int, action[1:])
+                if action[0] == 'reveal':
+                    self.reveal_cell(x, y)
+                elif action[0] == 'flag':
+                    self.flag_cell(x, y)
+            except ValueError:
+                print("Неверный ввод. Пожалуйста, введите действие (reveal/flag) и две координаты (например, 'reveal 3 4').")
+
+game = Game(10, 10, 10)
+game.start()
+game.process_input()
