@@ -51,7 +51,7 @@ class Game:
                         for dy in [-1, 0, 1]:
                             nx, ny = y + dy, x + dx
                             if 0 <= nx < self.height and 0 <= ny < self.width and not self.field[nx][ny].is_revealed:
-                                self.reveal_cell(ny + 1, nx + 1)  # корректировка индексов
+                                self.reveal_cell(ny + 1, nx + 1)
             if self.check_win():
                 self.win = True
                 self.game_over = True
